@@ -1,12 +1,12 @@
 # Overpass
-# Visar ISS position och besättning i realtid.
+# Displays ISS position and crew in real time.
 # API: Open Notify (open-notify.org)
-# Databas: Sparar position och besättning vid varje hämtning.
+# Database: Saves position and crew count on every fetch.
 #
 # GUI:
-#   - En knapp för att hämta data
-#   - Etiketter som visar position och besättning
-#   - En lista med tidigare hämtningar
+#   - A button to fetch data
+#   - Labels displaying position and crew
+#   - A list of previous fetches
 
 import tkinter as tk
 import requests
@@ -17,9 +17,9 @@ conn = sqlite3.connect("Overpass.db")
 cursor = conn.cursor()
 cursor.execute("""CREATE TABLE IF NOT EXISTS overpass (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, latitude REAL, longitude REAL, crew INTEGER)""")
 conn.commit()
-# Funktion för att hämta information om besättning på ISS
 
 
+# Function to fetch crew information from the ISS
 def get_astros():
     response = requests.get("http://api.open-notify.org/astros.json")
     if response.status_code == 200:
@@ -32,7 +32,7 @@ def get_astros():
     return len(iss_crew), names
 
 
-# Funktion för att hämta position av ISS
+# Function to fetch the current position of the ISS
 def get_position():
     response = requests.get("http://api.open-notify.org/iss-now.json")
     if response.status_code == 200:
@@ -41,17 +41,15 @@ def get_position():
         lon = data['iss_position']['longitude']
         return lat, lon
 
-# sparar tid, position och mängden besättning
 
-
+# Saves timestamp, position and crew count to the database
 def save_info(timestamp, latitude, longitude, crew):
     cursor.execute("""INSERT INTO overpass (timestamp, latitude, longitude, crew)VALUES (?,?,?,?)""",
                    (timestamp, latitude, longitude, crew))
     conn.commit()
 
-# visar det som sparades
 
-
+# Reads and displays all saved entries from the database
 def show_history():
     cursor.execute("SELECT * FROM overpass")
     lines = cursor.fetchall()
@@ -59,9 +57,8 @@ def show_history():
         [f"{l[1]} | LAT: {l[2]} | LON: {l[3]} | CREW: {l[4]}" for l in lines])
     label_history.config(text=output)
 
-# Lägger ihop allt för att kunna visa information
 
-
+# Fetches all data, saves it to the database and updates the GUI
 def fetch_all():
     label_info.config(text="Loading...")
     root.update()
@@ -73,7 +70,7 @@ def fetch_all():
         text=f"ISS Position:\nLatitude: {lat} \nLongitude: {lon}\n\n Crew: {crew_count}\n{crew_names}")
 
 
-# Detta är interface för programmet
+# GUI
 root = tk.Tk()
 root.geometry("400x600")
 root.title("OverPass")
